@@ -2,11 +2,12 @@
 
 require 'sinatra'
 require 'sinatra/activerecord'
-#require './environments'
+require './environments'
 require 'sinatra/flash'
 require 'sinatra/redirect_with_flash'
 require 'json'
-require 'ruby-debug'
+
+
 
 
 enable :sessions
@@ -179,12 +180,13 @@ post "/companies/:id/delete.json" do
   @company = Company.find(params[:id])
   if @company.destroy
     @response_service[:data] = @company
-    @response_service[:message] = "Successfully deleted company."    
+    @response_service[:message] = "Successfully deleted company."  
+    return @response_service.to_json  
   else
     @response_service[:status] = false
     @response_service[:message] = "Company does not exist"
-  end
-  return @response_service.to_json
+    return @response_service.to_json
+  end  
 end
 
 get '/companies/:id/edit' do
@@ -232,25 +234,22 @@ put '/companies/:id' do
 end
 #update.json
 post '/companies/:id/update.json' do
-  
-  @company = Company.find(eval(params[:id]))
+  @company = Company.find(params[:id])
   unless params[:passport].blank?
-    @para = eval(params[:passport])
-    if @para && (tmpfile = @para['tempfile']) && (name = @para['filename'])
+   @para = eval(params[:passport])
+   if @para && (tmpfile = @para['tempfile']) && (name = @para['filename'])
       directory = "public/passport"
       path = File.join(directory, name)
       if File.extname(path)!=".pdf"
         @response_service[:status] = false
         @response_service[:message] = "Please select a pdf file"
         return @response_service.to_json
-        # flash[:error] = "Please select a pdf file"
-        # return erb :"companies/edit"
       else
         @company.passport = path
       end
     end
   end
-  if @company.update_attributes(params[:company]) 
+  if @company.update_attributes(eval(params[:company]))
     File.open(path, "wb") { |f| f.write(tmpfile.read) } unless path.nil?
     @response_service[:message] = "You have successfully updated a company." 
     return @response_service.to_json
