@@ -2,10 +2,11 @@
 
 require 'sinatra'
 require 'sinatra/activerecord'
-require './environments'
+#require './environments'
 require 'sinatra/flash'
 require 'sinatra/redirect_with_flash'
 require 'json'
+require 'ruby-debug'
 
 
 enable :sessions
@@ -40,7 +41,7 @@ helpers do
   end
 end
 
-['/', "/companies/*","/companies", "/companies/*/edit"].each do |path|
+['/', "/companies/*","/companies", "/companies/*/edit","/companies.json","/companies/:id/update.json","/companies/:id/delete.json"].each do |path|
   before path do
     # create a empty response hash
     @response_service = {}
@@ -114,19 +115,21 @@ end
 
 post '/companies.json' do  
   @company = Company.new(eval(params[:company]))
-  @para = eval(params[:passport])
- if params[:passport] && (tmpfile = @para['tempfile']) && (name = @para['filename'])
-    directory = "public/passport"
-    path = File.join(directory, name)
-    if File.extname(path)!=".pdf"
-      @response_service[:status] = false
-      @response_service[:message] = "Please select a pdf file"
-      return @response_service.to_json
-    else
-      @company.passport = path
+  
+ unless params[:passport].blank?
+   @para = eval(params[:passport])
+   if @para && (tmpfile = @para['tempfile']) && (name = @para['filename'])
+      directory = "public/passport"
+      path = File.join(directory, name)
+      if File.extname(path)!=".pdf"
+        @response_service[:status] = false
+        @response_service[:message] = "Please select a pdf file"
+        return @response_service.to_json
+      else
+        @company.passport = path
+      end
     end
   end
-
   if @company.save    
     File.open(path, "wb") { |f| f.write(tmpfile.read) } unless path.nil?
     @response_service[:message] = "You have successfully created a company." 
@@ -231,18 +234,20 @@ end
 put '/companies/:id/update.json' do
   
   @company = Company.find(eval(params[:id]))
-  @para = eval(params[:passport])
-  if params[:passport] && (tmpfile = @para['tempfile']) && (name = @para['filename'])
-    directory = "public/passport"
-    path = File.join(directory, name)
-    if File.extname(path)!=".pdf"
-      @response_service[:status] = false
-      @response_service[:message] = "Please select a pdf file"
-      return @response_service.to_json
-      # flash[:error] = "Please select a pdf file"
-      # return erb :"companies/edit"
-    else
-      @company.passport = path
+  unless params[:passport].blank?
+    @para = eval(params[:passport])
+    if @para && (tmpfile = @para['tempfile']) && (name = @para['filename'])
+      directory = "public/passport"
+      path = File.join(directory, name)
+      if File.extname(path)!=".pdf"
+        @response_service[:status] = false
+        @response_service[:message] = "Please select a pdf file"
+        return @response_service.to_json
+        # flash[:error] = "Please select a pdf file"
+        # return erb :"companies/edit"
+      else
+        @company.passport = path
+      end
     end
   end
   if @company.update_attributes(params[:company]) 
