@@ -231,7 +231,7 @@ put '/companies/:id' do
   end
 end
 #update.json
-put '/companies/:id/update.json' do
+post '/companies/:id/update.json' do
   
   @company = Company.find(eval(params[:id]))
   unless params[:passport].blank?
