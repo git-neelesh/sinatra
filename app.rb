@@ -104,6 +104,32 @@ post '/companies' do
   if @company.save    
     File.open(path, "wb") { |f| f.write(tmpfile.read) } unless path.nil?
     @response_service[:message] = "You have successfully created a company." 
+    erb :"companies/show"
+  else  
+    @response_service[:status] = false
+    @response_service[:message] = "Company not created successfully due to following reason #{@company.errors.full_messages.join(',')}"
+    erb :"companies/new"
+  end
+end
+
+post '/companies.json' do  
+  @company = Company.new(eval(params[:company]))
+  @para = eval(params[:passport])
+ if params[:passport] && (tmpfile = @para['tempfile']) && (name = @para['filename'])
+    directory = "public/passport"
+    path = File.join(directory, name)
+    if File.extname(path)!=".pdf"
+      @response_service[:status] = false
+      @response_service[:message] = "Please select a pdf file"
+      return @response_service.to_json
+    else
+      @company.passport = path
+    end
+  end
+
+  if @company.save    
+    File.open(path, "wb") { |f| f.write(tmpfile.read) } unless path.nil?
+    @response_service[:message] = "You have successfully created a company." 
     return @response_service.to_json
   else  
     @response_service[:status] = false
@@ -122,9 +148,9 @@ get "/companies/:id" do
     @response_service[:status] = false
     @response_service[:message] = "User not exist"
   end
-  return @response_service.to_json
+  # return @response_service.to_json
   # APP_ROOT = File.dirname(__FILE__)
-  # erb :'companies/show'
+  erb :'companies/show'
 end
 
 # Deletes the company with this ID and redirects to homepage.
@@ -133,16 +159,31 @@ delete "/companies/:id" do
   if @company.destroy
     @response_service[:data] = @company
     @response_service[:message] = "Successfully deleted company." 
-    # flash[:success] = "Company successfully deleted."
-    # redirect '/'
+    flash[:success] = "Company successfully deleted."
+    redirect '/'
+    
   else
     @response_service[:status] = false
     @response_service[:message] = "Company does not exist"
-    # flash[:error] = "Company not deleted."
-    # redirect '/'
+    flash[:error] = "Company not deleted."
+    redirect '/'
+
   end
 end
- 
+
+# Deletes the company with this ID and redirects to homepage.
+post "/companies/:id/delete.json" do
+  @company = Company.find(params[:id])
+  if @company.destroy
+    @response_service[:data] = @company
+    @response_service[:message] = "Successfully deleted company."    
+  else
+    @response_service[:status] = false
+    @response_service[:message] = "Company does not exist"
+  end
+  return @response_service.to_json
+end
+
 get '/companies/:id/edit' do
   @company = Company.find(params[:id])
   if @company
@@ -175,6 +216,38 @@ put '/companies/:id' do
   if @company.update_attributes(params[:company]) 
     File.open(path, "wb") { |f| f.write(tmpfile.read) } unless path.nil?
     @response_service[:message] = "You have successfully updated a company." 
+    # return @response_service.to_json
+    erb :"companies/show"
+    # flash[:success] = "Company successfully updated"
+    # erb :'companies/show'
+  else  
+    @response_service[:status] = false
+    @response_service[:message] = "Company not created successfully due to following reason #{@company.errors.full_messages.join(',')}"
+    # return @response_service.to_json
+    erb :"companies/edit"
+  end
+end
+#update.json
+put '/companies/:id/update.json' do
+  
+  @company = Company.find(eval(params[:id]))
+  @para = eval(params[:passport])
+  if params[:passport] && (tmpfile = @para['tempfile']) && (name = @para['filename'])
+    directory = "public/passport"
+    path = File.join(directory, name)
+    if File.extname(path)!=".pdf"
+      @response_service[:status] = false
+      @response_service[:message] = "Please select a pdf file"
+      return @response_service.to_json
+      # flash[:error] = "Please select a pdf file"
+      # return erb :"companies/edit"
+    else
+      @company.passport = path
+    end
+  end
+  if @company.update_attributes(params[:company]) 
+    File.open(path, "wb") { |f| f.write(tmpfile.read) } unless path.nil?
+    @response_service[:message] = "You have successfully updated a company." 
     return @response_service.to_json
     # flash[:success] = "Company successfully updated"
     # erb :'companies/show'
@@ -184,6 +257,7 @@ put '/companies/:id' do
     return @response_service.to_json
   end
 end
+
 
 get '/download_file/*' do
   send_file(File.expand_path(params[:splat].join(''), settings.public_folder+"/passport"))

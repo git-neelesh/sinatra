@@ -26,7 +26,7 @@
     </tr>
     <tr>
      	<th>Passport</th>
-      <td><%=link_to '/download_file/'+@company.passport ,@company.passport %></td>
+      <td><%=link_to (@company.passport ? '/download_file/'+@company.passport : "#") ,@company.passport %></td>
     </tr>
     <tr>
     	<td colspan="2">
