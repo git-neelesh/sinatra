@@ -73,7 +73,7 @@ get '/' do
     @response_service[:status] = false
     @response_service[:message] = "No Companies exist"
   end
-  return @response_service.to_json  
+  erb :"companies/index"
 end
 get '/companies' do
   @companies = Company.all
